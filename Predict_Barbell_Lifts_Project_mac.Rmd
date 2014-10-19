@@ -1,0 +1,106 @@
+---
+title: "Predicting Barbell Lifts"
+author: "Annie Flippo"
+date: "October 14, 2014"
+output:
+  html_document:
+    keep_md: yes
+---
+
+# Executive Summary
+Human wearable devices have increased dramatically in the past few years.  These devices have made it possible to collect large amount of data in human activities.  In this study, the data collected in the Qualitative Activity Recognition of Weight Lifting Exercises project (see reference below) were used to categorgized barbell lifts.  The participants were asked to perform to lift in one correct and four incorrect manners.  These were categorized in the five following classes:
+
+* Class A - exactly according to the specification
+* Class B - throwing the elbows to the front 
+* Class C - lifting the dumbbell only halfway  
+* Class D - lowering the dumbbell only halfway 
+* Class E - throwing the hips to the front 
+
+The data was divided into 70% as a training set and 30% as a validation set.  A classification model using a Random Forest algorithm was employed to train and validate the model.  The Out-of-Sample error rate for the training set was 0.25% and the estimate of the Cross-Validation error was 0.3%.  In this study, the Random Forest algorithm performed extremely well on classifying the 5 classes of barbell lifts and in the predictions of the test cases. 
+
+## Get the Data
+```{r, warning=FALSE, message=FALSE}
+library(caret); library(e1071); library(ggplot2);library(corrgram)
+setwd("~/Dropbox/Coursera_MachineLearning")
+if (!file.exists("pml-training.csv")) {
+    trainURL <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+    testURL <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+    download.file(trainURL, destfile="pml-training.csv", method="curl")
+    download.file(testURL, destfile="pml-testing.csv", method="curl")
+}
+train.raw <- read.csv("pml-training.csv")
+test.raw <- read.csv("pml-testing.csv")
+```
+
+## Data Preparation
+Many columns have missing data or zero-length string.  Since missing values do not contribute to the model, they are excluded in the data set.  In addition, names of participants and dates are also eliminated.  Columns with more than 90% of missing data or zero-length string were removed from the study.  Finally, the data was partitioned 70% for training and 30% for validation as follows.
+
+```{r, warning=FALSE, message=FALSE}
+set.seed(123456)
+inTrain = createDataPartition(train.raw$classe, p = 0.7)[[1]]
+# Find columns with mostly NAs and keep only columns with more than 90% of data
+nonNAcolumn <- (apply(train.raw, 2, function(x) sum(!is.na(x)))) > (nrow(train.raw) * 0.9)
+
+# Find columns with mostly data and keep only columns that are more than 90% non-blanks
+nonBlankColumn <- (apply(train.raw, 2, function(x) sum(nchar(x) != 0))) > (nrow(train.raw) * 0.9)
+columnsToKeep <- nonNAcolumn & nonBlankColumn
+
+# Include only columns that has data
+training <- train.raw [, columnsToKeep]
+# Remove first 5 columns of name and dates
+training <- training [, 6:ncol(training)]
+
+train.data <- training[inTrain,]
+validate.data <- training[-inTrain,]
+test.data <- test.raw[, columnsToKeep]
+test.data <- test.data[, 6:ncol(test.data)]
+```
+
+The final data set include 55 predictors and has 13737 rows.  There were too many predictors to generate a sensible correlation plot but a sample graph of 2 predictors is created and color-coded by classe.  As an illustration, there is some evidence of clustering for the different classes in the roll\_belt and pitch\_forearm dimension.
+```{r}
+p <- ggplot(train.data, aes(pitch_forearm, roll_belt))
+p + geom_point(aes(colour=train.data$classe))
+```
+
+## Modeling
+A Random Forest algorithm is run for the training data.
+```{r, message=FALSE}
+set.seed(123456)
+modelFit <- train(classe ~., data=train.data, method="rf", importance=TRUE,
+                  trControl = trainControl(method = "cv", number = 4))
+print(modelFit$finalModel)
+```
+
+As the number of trees increases, the error rate decreases as illustrated by the following graph:
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+plot(modelFit$finalModel, main="Random Forest Error Rates")
+```
+
+A Variable Importance graph for the model per class of barbell lifts:
+```{r, warning=FALSE, message=FALSE, echo=FALSE }
+plot(varImp(modelFit), top = 20)
+```
+
+## Validating the Model
+The modelFit object was used to predict the outcome class for the validation data set aside earlier.  The accuracy for the predictions in the validation data is 0.997 which gives an error rate of 0.003 (or 0.3%).
+```{r}
+# Using Validate data set aside
+predValue <- predict(modelFit, validate.data)
+confusionMatrix(predValue,validate.data$classe)
+```
+
+## Prediction on test data
+In the final project question, I will 
+```{r }
+# Predicting using test data set 
+predTestValue <- predict(modelFit, test.data)
+predTestValue
+```
+
+## Conclusion
+The Random Forest model performed very well with an Out-of-Sample error rate of 0.25% and a Cross-Validation error rate of 0.3%.   
+
+### References
+Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013.
+
+Read more: http://groupware.les.inf.puc-rio.br/har#weight_lifting_exercises#ixzz3GXgmffpY
