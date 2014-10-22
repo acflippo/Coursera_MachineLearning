@@ -11,12 +11,13 @@ Human wearable devices have increased dramatically in the past few years.  These
 * Class D - lowering the dumbbell only halfway 
 * Class E - throwing the hips to the front 
 
-The data was divided into 70% as a training set and 30% as a validation set.  A classification model using a Random Forest algorithm was employed to train and validate the model.  The Out-of-Sample error rate for the training set was 0.25% and the estimate of the Cross-Validation error was 0.3%.  In this study, the Random Forest algorithm performed extremely well on classifying the 5 classes of barbell lifts and in the predictions of the test cases. 
+The data was divided into 70% as a training set and 30% as a validation set.  A classification model using a Random Forest algorithm was employed to train and validate the model.  The In-Sample error rate for the training set was 0.25% and the Out-of-Sample error was 0.3%.  In this study, the Random Forest algorithm performed extremely well on classifying the 5 classes of barbell lifts and in the predictions of the test cases. 
 
 ## Get the Data
 
 ```r
-library(caret); library(e1071); library(ggplot2);library(corrgram)
+library(caret); library(e1071); library(ggplot2);library(corrgram);library(doSNOW);
+registerDoSNOW(makeCluster(2, type = "SOCK"))
 setwd("~/Dropbox/Coursera_MachineLearning")
 if (!file.exists("pml-training.csv")) {
     trainURL <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
@@ -67,8 +68,18 @@ A Random Forest algorithm is run for the training data.
 
 ```r
 set.seed(123456)
+system.time(
 modelFit <- train(classe ~., data=train.data, method="rf", importance=TRUE,
                   trControl = trainControl(method = "cv", number = 4))
+)
+```
+
+```
+##    user  system elapsed 
+##  94.642   0.328 523.599
+```
+
+```r
 print(modelFit$finalModel)
 ```
 
@@ -80,24 +91,24 @@ print(modelFit$finalModel)
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 28
 ## 
-##         OOB estimate of  error rate: 0.25%
+##         OOB estimate of  error rate: 0.22%
 ## Confusion matrix:
 ##      A    B    C    D    E class.error
 ## A 3905    0    0    0    1    0.000256
-## B    7 2649    2    0    0    0.003386
-## C    0    5 2390    1    0    0.002504
-## D    0    0   11 2240    1    0.005329
-## E    0    1    0    5 2519    0.002376
+## B    7 2648    3    0    0    0.003762
+## C    0    4 2391    1    0    0.002087
+## D    0    0    8 2243    1    0.003996
+## E    0    0    0    5 2520    0.001980
 ```
 
 As the number of trees increases, the error rate decreases as illustrated by the following graph:
 ![plot of chunk unnamed-chunk-5](./Predict_Barbell_Lifts_Project_mac_files/figure-html/unnamed-chunk-5.png) 
 
-A Variable Importance graph for the model per class of barbell lifts:
+A Variable Importance graph for the model per classe of barbell lifts:
 ![plot of chunk unnamed-chunk-6](./Predict_Barbell_Lifts_Project_mac_files/figure-html/unnamed-chunk-6.png) 
 
 ## Validating the Model
-The modelFit object was used to predict the outcome class for the validation data set aside earlier.  The accuracy for the predictions in the validation data is 0.997 which gives an error rate of 0.003 (or 0.3%).
+The modelFit object was used to predict the outcome classe for the validation data set aside earlier.  The accuracy for the predictions in the validation data is 0.997 which gives an error rate of 0.003 (or 0.3%).
 
 ```r
 # Using Validate data set aside
@@ -110,10 +121,10 @@ confusionMatrix(predValue,validate.data$classe)
 ## 
 ##           Reference
 ## Prediction    A    B    C    D    E
-##          A 1674    6    0    0    0
-##          B    0 1133    2    0    0
-##          C    0    0 1024    5    0
-##          D    0    0    0  959    3
+##          A 1674    7    0    0    0
+##          B    0 1132    2    0    0
+##          C    0    0 1024    4    0
+##          D    0    0    0  960    3
 ##          E    0    0    0    0 1079
 ## 
 ## Overall Statistics
@@ -129,18 +140,18 @@ confusionMatrix(predValue,validate.data$classe)
 ## Statistics by Class:
 ## 
 ##                      Class: A Class: B Class: C Class: D Class: E
-## Sensitivity             1.000    0.995    0.998    0.995    0.997
-## Specificity             0.999    1.000    0.999    0.999    1.000
-## Pos Pred Value          0.996    0.998    0.995    0.997    1.000
+## Sensitivity             1.000    0.994    0.998    0.996    0.997
+## Specificity             0.998    1.000    0.999    0.999    1.000
+## Pos Pred Value          0.996    0.998    0.996    0.997    1.000
 ## Neg Pred Value          1.000    0.999    1.000    0.999    0.999
 ## Prevalence              0.284    0.194    0.174    0.164    0.184
-## Detection Rate          0.284    0.193    0.174    0.163    0.183
-## Detection Prevalence    0.285    0.193    0.175    0.163    0.183
-## Balanced Accuracy       0.999    0.997    0.999    0.997    0.999
+## Detection Rate          0.284    0.192    0.174    0.163    0.183
+## Detection Prevalence    0.286    0.193    0.175    0.164    0.183
+## Balanced Accuracy       0.999    0.997    0.999    0.998    0.999
 ```
 
 ## Prediction on test data
-In the final project question, I will 
+In the final project submission, I predicted the classe for 20 test cases. 
 
 ```r
 # Predicting using test data set 
@@ -154,7 +165,7 @@ predTestValue
 ```
 
 ## Conclusion
-The Random Forest model performed very well with an Out-of-Sample error rate of 0.25% and a Cross-Validation error rate of 0.3%.   
+The Random Forest model performed very well with an In-Sample error rate of 0.25% and a Out-of-Sample error rate of 0.3%.  It also predicted the test data with great accuracy. 
 
 ### References
 Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013.
