@@ -11,7 +11,7 @@ Human wearable devices have increased dramatically in the past few years.  These
 * Class D - lowering the dumbbell only halfway 
 * Class E - throwing the hips to the front 
 
-The data was divided into 70% as a training set and 30% as a validation set.  A classification model using a Random Forest algorithm was employed to train and validate the model.  The In-Sample error rate for the training set was 0.25% and the Out-of-Sample error was 0.3%.  In this study, the Random Forest algorithm performed extremely well on classifying the 5 classes of barbell lifts and in the predictions of the test cases. 
+The data was divided into 70% as a training set and 30% as a validation set.  A classification model using a Random Forest algorithm was employed to train and validate the model.  The In-Sample error rate for the training set was 0.22% and the Out-of-Sample error was 0.3%.  In this study, the Random Forest algorithm performed extremely well on classifying the 5 classes of barbell lifts and in the predictions of the test cases. 
 
 ## Get the Data
 
@@ -76,7 +76,7 @@ modelFit <- train(classe ~., data=train.data, method="rf", importance=TRUE,
 
 ```
 ##    user  system elapsed 
-##  94.642   0.328 523.599
+##  93.546   0.304 512.555
 ```
 
 ```r
@@ -101,7 +101,7 @@ print(modelFit$finalModel)
 ## E    0    0    0    5 2520    0.001980
 ```
 
-As the number of trees increases, the error rate decreases as illustrated by the following graph:
+With the In-Sample error rate is 0.22%, I **expect the Out-of-Sample error rate to be slightly higher than 0.22%**.  As the number of trees increases, the error rate decreases as illustrated by the following graph:
 ![plot of chunk unnamed-chunk-5](./Predict_Barbell_Lifts_Project_mac_files/figure-html/unnamed-chunk-5.png) 
 
 A Variable Importance graph for the model per classe of barbell lifts:
@@ -165,7 +165,7 @@ predTestValue
 ```
 
 ## Conclusion
-The Random Forest model performed very well with an In-Sample error rate of 0.25% and a Out-of-Sample error rate of 0.3%.  It also predicted the test data with great accuracy. 
+The Random Forest model performed very well with an In-Sample error rate of 0.22% and a Out-of-Sample error rate of 0.3%.  It also predicted the test data with great accuracy. 
 
 ### References
 Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013.
